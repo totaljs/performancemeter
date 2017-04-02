@@ -1,0 +1,33 @@
+{
+    "author": {
+        "name": "Peter Sirka",
+        "email": "petersirka@gmail.com",
+        "url": "https://www.petersirka.com"
+    },
+    "description": "A simple JavaScript code performance meter",
+    "engines": {
+        "node": ">=4.0.0"
+    },
+    "keywords": ["performance", "benchmark"],
+    "license": "MIT",
+    "main": "./index.js",
+    "name": "performancemeter",
+    "readmeFilename": "readme.md",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/petersirka/codeperformance.git"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "contributors": [{
+        "name": "Peter Širka",
+        "email": "petersirka@gmail.com"
+    }],
+    "version": "1.0.0",
+    "homepage": "https://www.petersirka.com",
+    "bugs": {
+        "url": "https://github.com/petersirka/codeperformance/issues",
+        "email": "petersirka@gmail.com"
+    }
+}
