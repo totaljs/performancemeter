@@ -38,7 +38,7 @@ Meter.measure('RegExp.test()', function() {
 });
 ```
 
-## Contact
+## Contact
 
 - contact form <https://www.totaljs.com/contact/>
 - <info@totaljs.com>
