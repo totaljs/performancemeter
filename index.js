@@ -1,11 +1,16 @@
 const BENCHMARK = {};
 BENCHMARK.max = 0;
 BENCHMARK.round = 0;
+BENCHMARK.rounds = 6;
 BENCHMARK.queue = [];
 BENCHMARK.exec = null;
 
 exports.manually = function() {
 	clearTimeout(BENCHMARK.exec);
+};
+
+exports.name = function(name) {
+	BENCHMARK.name = name;
 };
 
 exports.mode = function(type) {
@@ -40,24 +45,40 @@ exports.measure = function(name, fn, init) {
 	BENCHMARK.queue.push({ name: name, results: [], fn: fn });
 };
 
-exports.exec = function() {
+exports.exec = function(callback) {
 
-	console.log('=======================================');
-	console.log('Performance Meter v1');
-	console.log('=======================================');
+	console.log('===================================');
+	console.log('> JavaScript Performance Meter v1 <');
+	BENCHMARK.name && console.log('> Name: ' + BENCHMARK.name);
+	console.log('===================================');
+	console.log('');
 
 	BENCHMARK.round = 0;
 
-	while (BENCHMARK.round < 5) {
-		BENCHMARK.round++;
-		var msg = '------ round (' + BENCHMARK.round + '/5)';
-		console.time(msg);
+	for (var i = 0, length = BENCHMARK.queue.length; i < length; i++)
+		BENCHMARK.queue.results = [];
+
+	while (BENCHMARK.round < BENCHMARK.rounds) {
+		var msg = '------ round (' + BENCHMARK.round + '/' + (BENCHMARK.rounds - 1) + ')';
+		BENCHMARK.round && console.time(msg);
+
 		for (var i = 0, length = BENCHMARK.queue.length; i < length; i++) {
-			var item = BENCHMARK.queue.shift();
+			var item = BENCHMARK.queue[i];
 			measure(item);
-			BENCHMARK.queue.push(item);
 		}
-		console.timeEnd(msg);
+
+		for (var i = BENCHMARK.queue.length - 1; i > -1; i--) {
+			var item = BENCHMARK.queue[i];
+			measure(item);
+		}
+
+		for (var i = 0, length = BENCHMARK.queue.length; i < length; i++) {
+			var item = BENCHMARK.queue[i];
+			measure(item);
+		}
+
+		BENCHMARK.round && console.timeEnd(msg);
+		BENCHMARK.round++;
 	}
 
 	var max = 0;
@@ -71,10 +92,11 @@ exports.exec = function() {
 
 	BENCHMARK.queue.forEach(function(item) {
 		var percentage = 100 - ((item.result / max) * 100) >> 0;
-		console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + (percentage === 0 ? 'slowest' : ('± ' + percentage + '% fastest')) + ' (' + item.result + ' ms)');
+		console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + (percentage === 0 ? 'slowest' : ('+' + percentage + '% fastest')) + ' (' + item.result + ' ms)');
 	});
 
 	console.log('');
+	callback && callback();
 };
 
 function measure(item) {
@@ -114,4 +136,4 @@ function padRight(self, max, c) {
 }
 
 exports.mode('medium');
-setTimeout(exports.exec, 100);
+BENCHMARK.exec = setTimeout(exports.exec, 100);
