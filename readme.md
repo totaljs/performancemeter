@@ -10,7 +10,13 @@ A simple JavaScript performance meter.
 ```javascript
 const Meter = require('performancemeter');
 
-// Meter.mesaure(TEST_NAME, function_test, [function_init]);
+// Optional
+Meter.name('Bla bla bla');
+
+// Optional, default: "medium" (other types: "veryeasy", "easy", "medium", "hard")
+Meter.mode('easy');
+
+// Meter.measure(TEST_NAME, function_test, [function_init]);
 // @TEST_NAME {String}
 // @function_test {Function}
 // @function_init {Function} optional, can contains init values
@@ -36,6 +42,10 @@ Meter.measure('RegExp.test()', function() {
     var reg = /meter/;
     var str = 'Performance meter';    
 });
+
+// ASYNC:
+Meter.measure('nextTick', 'process.nextTick(NEXT)');
+Meter.measure('immediate', 'setImmediate(NEXT)');
 ```
 
 ## Contact
