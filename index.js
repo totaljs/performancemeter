@@ -24,11 +24,9 @@ exports.name = function(name) {
 exports.mode = function(type) {
 	switch (type) {
 		case 'verylow':
-		case 'veryeasy':
 			BENCHMARK.max = 100;
 			break;
 		case 'low':
-		case 'easy':
 			BENCHMARK.max = 1000000;
 			break;
 		case 'medium':
@@ -93,22 +91,22 @@ exports.exec = function(callback) {
 
 		BENCHMARK.queue.forEach(function(item, index) {
 			item.result = Math.round(median(item.results));
-
-			if (index === 0)
-				prev = item.result;
-			else if (prev !== item.result) {
-				prev = item.result;
-				same = false;
-			}
-
 			max = Math.max(max, item.result);
+		});
+
+		BENCHMARK.queue.forEach(function(item, index) {
+			item.percentage = (100 - ((item.result / max) * 100)).toFixed(1);
+			if (!index) {
+				prev = item.percentage;
+				return;
+			} else if (item.percentage !== prev)
+				same = false;
 		});
 
 		console.log('');
 
 		BENCHMARK.queue.forEach(function(item) {
-			var percentage = 100 - ((item.result / max) * 100) >> 0;
-			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + (same ? 'same performance' : percentage === 0 ? 'slowest' : ('+' + percentage + '% fastest')) + ' (' + item.result + ' ms)');
+			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + (same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)');
 		});
 
 		console.log('');
