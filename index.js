@@ -36,9 +36,10 @@ exports.measure = function(name, fn, init) {
 	if (typeof(fn) === 'function')
 		fn = clean(fn);
 
-	if (init && init[init.length - 1] !== ';');
+	if (init && init[init.length - 1] !== ';')
 		init += ';';
-	if (fn && fn[fn.length - 1] !== ';');
+
+	if (fn && fn[fn.length - 1] !== ';')
 		fn += ';';
 
 	fn = new Function('$max', (init || '') + 'var $i=0;while($i++<$max){' + fn.toString().replace(/\;{2,}/, '') + '}');
@@ -82,9 +83,19 @@ exports.exec = function(callback) {
 	}
 
 	var max = 0;
+	var prev = 0;
+	var same = true;
 
-	BENCHMARK.queue.forEach(function(item) {
+	BENCHMARK.queue.forEach(function(item, index) {
 		item.result = Math.round(median(item.results));
+
+		if (index === 0)
+			prev = item.result;
+		else if (prev !== item.result) {
+			prev = item.result;
+			same = false;
+		}
+
 		max = Math.max(max, item.result);
 	});
 
@@ -92,7 +103,7 @@ exports.exec = function(callback) {
 
 	BENCHMARK.queue.forEach(function(item) {
 		var percentage = 100 - ((item.result / max) * 100) >> 0;
-		console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + (percentage === 0 ? 'slowest' : ('+' + percentage + '% fastest')) + ' (' + item.result + ' ms)');
+		console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + (same ? 'same performance' : percentage === 0 ? 'slowest' : ('+' + percentage + '% fastest')) + ' (' + item.result + ' ms)');
 	});
 
 	console.log('');
