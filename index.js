@@ -89,7 +89,7 @@ exports.exec = function(callback) {
 		var prev = 0;
 		var same = true;
 
-		BENCHMARK.queue.forEach(function(item, index) {
+		BENCHMARK.queue.forEach(function(item) {
 			item.result = Math.round(median(item.results));
 			max = Math.max(max, item.result);
 		});
