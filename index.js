@@ -82,7 +82,7 @@ exports.measure = function(name, fn, init, async) {
 exports.exec = function(callback) {
 
 	console.log('===========================================================');
-	console.log('> JavaScript Performance Meter v1');
+	console.log('> JavaScript Performance Meter v2');
 	BENCHMARK.name && console.log('> Name: ' + BENCHMARK.name);
 	console.log('===========================================================');
 	console.log('');
