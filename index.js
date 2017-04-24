@@ -69,7 +69,7 @@ exports.measure = function(name, fn, init, async) {
 		init += ';';
 
 	if (async || fn.indexOf('NEXT') !== -1)
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){if(INDEX<$MAX$){var mem=process.memoryUsage().heapUsed;INDEX++;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);$RUN();return}console.log((Date.now() - $TIME$)+\',\'+$MMIN$+\',\'+$MMAX$)}$RUN()';
+		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}console.log((Date.now() - $TIME$)+\',\'+$MMIN$+\',\'+$MMAX$)}$RUN()';
 	else
 		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;console.log(Date.now() - $TIME$+\',\'+mem+\',\'+mem)';
 
