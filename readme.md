@@ -13,8 +13,10 @@ const Meter = require('performancemeter');
 // Optional
 Meter.name('Bla bla bla');
 
-// Optional, default: "medium" (other types: "veryeasy", "easy", "medium", "hard")
+// Optional, default: "medium" (other types: "veryeasy", "easy", "medium", "hard", "veryhard")
 Meter.mode('easy');
+// or sets 10 cycles, veryeasy === 100, easy = 100000, medium = 10000000, hard = 10000000000
+Meter.mode(10);
 
 // Meter.measure(TEST_NAME, function_test, [function_init]);
 // @TEST_NAME {String}
