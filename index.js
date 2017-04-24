@@ -60,9 +60,9 @@ exports.measure = function(name, fn, init, async) {
 		init += ';';
 
 	if (async || fn.indexOf('NEXT') !== -1)
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){if(INDEX<$MAX$){INDEX++;$RUN();return}console.log(Date.now() - $TIME$)}$RUN()';
+		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MIN$=0,$MAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){if(INDEX<$MAX$){var mem=process.memoryUsage().heapUsed;INDEX++;$MIN$=Math.min($MIN$,mem);$MAX$=Math.max($MAX$,mem);$RUN();return}console.log((Date.now() - $TIME$)+\',\'+$MIN$+\',\'+$MAX$)}$RUN()';
 	else
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();console.log(Date.now() - $TIME$)';
+		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MIN$=0,$MAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;console.log(Date.now() - $TIME$+\',\'+mem+\',\'+mem)';
 
 	var filename = FILENAME + BENCHMARK.queue.length + '.js';
 	Fs.writeFileSync(filename, fn);
@@ -115,8 +115,10 @@ exports.exec = function(callback) {
 		});
 	};
 
-	for (var i = 0, length = BENCHMARK.queue.length; i < length; i++)
+	for (var i = 0, length = BENCHMARK.queue.length; i < length; i++) {
 		BENCHMARK.queue.results = [];
+		BENCHMARK.queue.memory = [];
+	}
 
 	console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
 	next();
@@ -124,7 +126,9 @@ exports.exec = function(callback) {
 
 function measure(item, next) {
 	Exec('node', [item.filename, BENCHMARK.max], function(err, response) {
-		item.results.push(+response);
+		var res = response.trim().split(',');
+		item.results.push(+res[0]);
+		item.memory.push((+res[0] + res[1]) / 2);
 		err && console.log(err);
 		next();
 	});
