@@ -69,9 +69,9 @@ exports.measure = function(name, fn, init, async) {
 		init += ';';
 
 	if (async || fn.indexOf('NEXT') !== -1)
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}console.log((Date.now() - $TIME$)+\',\'+$MMIN$+\',\'+$MMAX$)}$RUN()';
+		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $CPU$=process.cpuUsage();$MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}$CPU$=process.cpuUsage($CPU$);console.log((Date.now() - $TIME$)+\',\'+$MMIN$+\',\'+$MMAX$+\',\'+$CPU$.user)}$RUN()';
 	else
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;console.log(Date.now() - $TIME$+\',\'+mem+\',\'+mem)';
+		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $CPU$=process.cpuUsage();var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;$CPU$=process.cpuUsage($CPU$);console.log(Date.now() - $TIME$+\',\'+mem+\',\'+mem+\',\'+$CPU$.user)';
 
 	var filename = FILENAME + BENCHMARK.queue.length + '.js';
 	Fs.writeFileSync(filename, fn);
@@ -100,14 +100,17 @@ exports.exec = function(callback) {
 		BENCHMARK.queue.forEach(function(item) {
 			var time = [];
 			var memory = [];
+			var cpu = [];
 
 			item.results.forEach(function(r) {
 				time.push(r.time);
 				memory.push(r.memory);
+				cpu.push(r.cpu);
 			});
 
 			item.result = Math.round(median(time));
 			item.memory = Math.round(median(memory));
+			item.cpu = Math.round(median(cpu)) / 1000;
 			max = Math.max(max, item.result);
 		});
 
@@ -123,7 +126,7 @@ exports.exec = function(callback) {
 		console.log('');
 
 		BENCHMARK.queue.forEach(function(item) {
-			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)').replace(/\)$/g, ', ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB)'));
+			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)').replace(/\)$/g, ', ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB, CPU: ' + item.cpu.toFixed(0) + ' ms)'));
 		});
 
 		console.log('');
@@ -147,7 +150,7 @@ function NOOP() {
 function measure(item, next) {
 	Exec('node', [item.filename, BENCHMARK.max], function(err, response) {
 		var res = response.trim().split(',');
-		item.results.push({ time: +res[0], memory: (+res[0] + res[1]) / 2 });
+		item.results.push({ time: +res[0], memory: (+res[1] + res[2]) / 2, cpu: +res[3] });
 		err && console.log(err);
 		next();
 	});
