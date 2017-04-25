@@ -71,7 +71,7 @@ exports.measure = function(name, fn, init, async) {
 	if (async || fn.indexOf('NEXT') !== -1)
 		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $CPU$=process.cpuUsage();$MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}$CPU$=process.cpuUsage($CPU$);console.log((Date.now()-$TIME$)+\',\'+$MMIN$+\',\'+$MMAX$+\',\'+($CPU$.user/(($CPU$.user+$CPU$.system)/100)))}$RUN()';
 	else
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $CPU$=process.cpuUsage();var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;$CPU$=process.cpuUsage($CPU$);console.log(Date.now()-$TIME$+\',\'+mem+\',\'+mem+\',\'+($CPU$.user/(($CPU$.user+$CPU$.system)/100))';
+		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $CPU$=process.cpuUsage();var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;$CPU$=process.cpuUsage($CPU$);console.log(Date.now()-$TIME$+\',\'+mem+\',\'+mem+\',\'+($CPU$.user/(($CPU$.user+$CPU$.system)/100)))';
 
 	var filename = FILENAME + BENCHMARK.queue.length + '.js';
 	Fs.writeFileSync(filename, fn);
@@ -150,7 +150,7 @@ function NOOP() {
 function measure(item, next) {
 	Exec('node', [item.filename, BENCHMARK.max], function(err, response) {
 		var res = response.trim().split(',');
-		item.results.push({ time: +res[0], memory: (+res[1] + res[2]) / 2, cpu: +res[3] });
+		item.results.push({ time: +res[0], memory: ((+res[1]) + (+res[2])) / 2, cpu: +res[3] });
 		err && console.log(err);
 		next();
 	});
