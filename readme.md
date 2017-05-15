@@ -45,9 +45,14 @@ Meter.measure('RegExp.test()', function() {
     var str = 'Performance meter';    
 });
 
-// ASYNC:
-Meter.measure('nextTick', 'process.nextTick(NEXT)');
-Meter.measure('immediate', 'setImmediate(NEXT)');
+// Async example:
+Meter.measure('nextTick', function() {
+    process.nextTick(NEXT);
+});
+
+Meter.measure('immediate', function() {
+    setImmediate(NEXT);
+});
 ```
 
 ## Contact
