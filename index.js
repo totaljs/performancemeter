@@ -69,23 +69,24 @@ exports.measure = function(name, fn, init, async) {
 		init += ';';
 
 	if (async || fn.indexOf('NEXT') !== -1)
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}console.log((Date.now()-$TIME$)+\',\'+$MMIN$+\',\'+$MMAX$)}$RUN()';
+		fn = (init || '') + 'function $RUN(){$MCOUNT$++;' + fn.toString() + '}var $MCOUNT$=0,$MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}console.log((Date.now()-$TIME$)+\',\'+$MMIN$+\',\'+$MMAX$+\',\'+$MCOUNT$)}$RUN()';
 	else
-		fn = (init || '') + 'function $RUN(){' + fn.toString() + '}var $MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;console.log(Date.now()-$TIME$+\',\'+mem+\',\'+mem)';
+		fn = (init || '') + 'function $RUN(){$MCOUNT$++;' + fn.toString() + '}var $MCOUNT$=0,$MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;console.log(Date.now()-$TIME$+\',\'+mem+\',\'+mem+\',\'+$MCOUNT$)';
 
 	var filename = FILENAME + BENCHMARK.queue.length + '.js';
 	Fs.writeFileSync(filename, fn);
-	BENCHMARK.queue.push({ name: name, filename: filename, results: [], memory: [], fn: fn });
+	BENCHMARK.queue.push({ name: name, filename: filename, results: [], memory: [], count: 0, fn: fn });
 	return exports;
 };
 
 exports.exec = function(callback) {
 
 	console.log('===========================================================');
-	console.log('> JavaScript Performance Meter v2');
+	console.log('> JavaScript Performance Meter v3');
 	BENCHMARK.name && console.log('> Name: ' + BENCHMARK.name);
 	console.log('===========================================================');
 	console.log('');
+	console.time('Duration');
 
 	BENCHMARK.round = 1;
 	BENCHMARK.index = 0;
@@ -122,9 +123,17 @@ exports.exec = function(callback) {
 
 		console.log('');
 
+		var count = 0;
 		BENCHMARK.queue.forEach(function(item) {
-			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ' ' + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)').replace(/\)$/g, ', memory: ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB)'));
+			count = Math.max(count, item.count);
+			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)').replace(/\)$/g, ', memory: ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB)'));
 		});
+
+		console.log('');
+
+
+		console.log('Each test has been executed "' + count.format(0) + '" times.');
+		console.timeEnd('Duration');
 
 		console.log('');
 		BENCHMARK.callback && BENCHMARK.callback(BENCHMARK.queue);
@@ -147,6 +156,7 @@ function NOOP() {
 function measure(item, next) {
 	Exec('node', [item.filename, BENCHMARK.max], function(err, response) {
 		var res = response.trim().split(',');
+		item.count += +res[3];
 		item.results.push({ time: +res[0], memory: ((+res[1]) + (+res[2])) / 2 });
 		err && console.log(err);
 		next();
@@ -201,6 +211,53 @@ function padRight(self, max, c) {
 		self += c;
 	return self;
 }
+
+Number.prototype.format = function(decimals, separator, separatorDecimal) {
+
+	var self = this;
+	var num = self.toString();
+	var dec = '';
+	var output = '';
+	var minus = num[0] === '-' ? '-' : '';
+	if (minus)
+		num = num.substring(1);
+
+	var index = num.indexOf('.');
+
+	if (typeof(decimals) === 'string') {
+		var tmp = separator;
+		separator = decimals;
+		decimals = tmp;
+	}
+
+	if (separator === undefined)
+		separator = ' ';
+
+	if (index !== -1) {
+		dec = num.substring(index + 1);
+		num = num.substring(0, index);
+	}
+
+	index = -1;
+	for (var i = num.length - 1; i >= 0; i--) {
+		index++;
+		if (index > 0 && index % 3 === 0)
+			output = separator + output;
+		output = num[i] + output;
+	}
+
+	if (decimals || dec.length) {
+		if (dec.length > decimals)
+			dec = dec.substring(0, decimals || 0);
+		else
+			dec = dec.padRight(decimals || 0, '0');
+	}
+
+	if (dec.length && separatorDecimal === undefined)
+		separatorDecimal = separator === '.' ? ',' : '.';
+
+	return minus + output + (dec.length ? separatorDecimal + dec : '');
+};
 
 exports.mode('medium');
 BENCHMARK.exec = setTimeout(exports.exec, 100);

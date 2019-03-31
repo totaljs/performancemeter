@@ -2,7 +2,7 @@
     "author": {
         "name": "Peter Sirka",
         "email": "petersirka@gmail.com",
-        "url": "https://www.petersirka.com"
+        "url": "https://www.totaljs.com"
     },
     "description": "A simple JavaScript code performance meter",
     "engines": {
@@ -15,7 +15,7 @@
     "readmeFilename": "readme.md",
     "repository": {
         "type": "git",
-        "url": "https://github.com/petersirka/codeperformance.git"
+        "url": "https://github.com/petersirka/performancemeter.git"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -24,10 +24,10 @@
         "name": "Peter Širka",
         "email": "petersirka@gmail.com"
     }],
-    "version": "2.1.3",
-    "homepage": "https://www.petersirka.com",
+    "version": "3.0.0",
+    "homepage": "https://www.totaljs.com",
     "bugs": {
-        "url": "https://github.com/petersirka/codeperformance/issues",
+        "url": "https://github.com/petersirka/performancemeter/issues",
         "email": "petersirka@gmail.com"
     }
 }

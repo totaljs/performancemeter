@@ -28,30 +28,30 @@ Meter.measure('String.indexOf()', 'str.indexOf("meter")', 'var str = "Performanc
 Meter.measure('RegExp.test()', 'reg.test(str)', 'var reg = /meter/; var str = "Performance meter');
 
 // Example 2:
-Meter.measure('String.indexOf()', () => str.indexOf('meter'), 'var str = "Performance meter"');   
-Meter.measure('RegExp.test()', () => reg.test(str), 'var reg = /meter/; var str = "Performance meter"'); 
+Meter.measure('String.indexOf()', () => str.indexOf('meter'), 'var str = "Performance meter"');
+Meter.measure('RegExp.test()', () => reg.test(str), 'var reg = /meter/; var str = "Performance meter"');
 
 // Example 3:
 Meter.measure('String.indexOf()', function() {
-    str.indexOf('meter');
+	str.indexOf('meter');
 }, function() {
-    var str = 'Performance meter';    
+	var str = 'Performance meter';
 });
 
 Meter.measure('RegExp.test()', function() {
-    reg.test(str);
+	reg.test(str);
 }, function() {
-    var reg = /meter/;
-    var str = 'Performance meter';    
+	var reg = /meter/;
+	var str = 'Performance meter';
 });
 
 // Async example:
 Meter.measure('nextTick', function() {
-    process.nextTick(NEXT);
+	process.nextTick(NEXT);
 });
 
 Meter.measure('immediate', function() {
-    setImmediate(NEXT);
+	setImmediate(NEXT);
 });
 ```
 
