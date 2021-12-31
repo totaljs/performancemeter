@@ -1,10 +1,9 @@
 const Fs = require('fs');
 const Path = require('path');
 const Exec = require('child_process').execFile;
-const Os = require('os');
 
 const BENCHMARK = {};
-var FILENAME = Path.join(Os.tmpdir(), 'performance_' + Math.floor(Math.random() * 65536).toString(36) + '_');
+const FILENAME = Path.join('.performance_' + Math.floor(Math.random() * 65536).toString(36) + '_');
 
 BENCHMARK.max = 0;
 BENCHMARK.index = 0;
