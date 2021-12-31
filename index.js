@@ -316,5 +316,8 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	return minus + output + (dec.length ? separatorDecimal + dec : '');
 };
 
-exports.mode('medium');
+exports.mode('low');
 BENCHMARK.exec = setTimeout(exports.exec, 100);
+
+if (process.argv.includes('--multiple'))
+	exports.multiple();
