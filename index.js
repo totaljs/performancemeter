@@ -159,7 +159,7 @@ exports.exec = function(callback) {
 				return;
 
 			count = Math.max(count, item.count);
-			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)').replace(/\)$/g, ', memory: ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB)'));
+			console.log('[ ' + padRight(item.name + ' ', 40, '.') + ' ' + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (avg. ' + item.result + ' ms)').replace(/\)$/g, ', ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB) ]'));
 		});
 
 		if (!BENCHMARK.multiple) {
