@@ -11,7 +11,10 @@ A simple JavaScript performance meter.
 const Meter = require('performancemeter');
 
 // Optional
-Meter.name('Bla bla bla');
+// Meter.name('Bla bla bla');
+
+// NEW: restricts output data
+// Meter.multiple();
 
 // Optional, default: "medium" (other types: "veryeasy", "easy", "medium", "hard", "veryhard")
 Meter.mode('easy');

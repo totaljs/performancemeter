@@ -12,6 +12,10 @@ BENCHMARK.rounds = 5;
 BENCHMARK.queue = [];
 BENCHMARK.exec = null;
 
+exports.multiple = function() {
+	BENCHMARK.multiple = true;
+};
+
 exports.manually = function() {
 	clearTimeout(BENCHMARK.exec);
 	return exports;
@@ -81,12 +85,14 @@ exports.measure = function(name, fn, init, async) {
 
 exports.exec = function(callback) {
 
-	console.log('===========================================================');
-	console.log('> JavaScript Performance Meter v4');
-	BENCHMARK.name && console.log('> Name: ' + BENCHMARK.name);
-	console.log('===========================================================');
-	console.log('');
-	console.time('Duration');
+	if (!BENCHMARK.multiple) {
+		console.log('===========================================================');
+		console.log('> JavaScript Performance Meter v4');
+		BENCHMARK.name && console.log('> Name: ' + BENCHMARK.name);
+		console.log('===========================================================');
+		console.log('');
+		console.time('Duration');
+	}
 
 	BENCHMARK.round = 1;
 	BENCHMARK.index = 0;
@@ -121,7 +127,12 @@ exports.exec = function(callback) {
 			if (item.warming)
 				return;
 
-			item.percentage = item.result == 0 || max === 0 ? 0 : (100 - ((item.result / max) * 100)).toFixed(1);
+			item.percentage = item.result == 0 || max === 0 ? 0 : (100 - ((item.result / max) * 100));
+
+			if (item.percentage <= 5)
+				item.percentage = 0;
+
+			item.percentage = item.percentage.toFixed(1);
 
 			if (!index) {
 				prev = item.percentage;
@@ -130,13 +141,17 @@ exports.exec = function(callback) {
 				same = false;
 		});
 
-		console.log('');
+		if (!BENCHMARK.multiple)
+			console.log('');
 
 		var count = 0;
 
 		BENCHMARK.queue.sort(function(a, b) {
 			return a.index > b.index ? 1 : a.index === b.index ? 0 : -1;
 		});
+
+		if (BENCHMARK.multiple)
+			console.log('------', Path.basename(process.argv[1]));
 
 		BENCHMARK.queue.forEach(function(item) {
 
@@ -147,12 +162,13 @@ exports.exec = function(callback) {
 			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)').replace(/\)$/g, ', memory: ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB)'));
 		});
 
-		console.log('');
+		if (!BENCHMARK.multiple) {
+			console.log('');
+			console.log('Each test has been executed "' + count.format(0) + '" times.');
+			console.timeEnd('Duration');
+			console.log('');
+		}
 
-		console.log('Each test has been executed "' + count.format(0) + '" times.');
-		console.timeEnd('Duration');
-
-		console.log('');
 		BENCHMARK.callback && BENCHMARK.callback(BENCHMARK.queue);
 		BENCHMARK.queue.forEach(function(item) {
 			Fs.unlinkSync(item.filename);
@@ -162,7 +178,9 @@ exports.exec = function(callback) {
 	for (var i = 0; i < BENCHMARK.queue.length; i++)
 		BENCHMARK.queue.results = [];
 
-	console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
+	if (!BENCHMARK.multiple)
+		console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
+
 	next();
 
 	return exports;
@@ -228,7 +246,8 @@ function next() {
 		randomize(BENCHMARK.queue);
 		BENCHMARK.index = 0;
 		BENCHMARK.round++;
-		console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
+		if (!BENCHMARK.multiple)
+			console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
 		return next();
 	}
 
