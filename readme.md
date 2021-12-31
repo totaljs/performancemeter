@@ -4,10 +4,10 @@
 
 A simple JavaScript performance meter.
 
-- installation `$ npm install performancemeter`
+- installation `$ npm install performancemeter`
 - www.totaljs.com
 
-```javascript
+```js
 const Meter = require('performancemeter');
 
 // Optional

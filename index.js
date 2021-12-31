@@ -1,9 +1,10 @@
 const Fs = require('fs');
 const Path = require('path');
 const Exec = require('child_process').execFile;
+const Os = require('os');
 
 const BENCHMARK = {};
-var FILENAME = Path.join('.performancemeter_' + Math.floor(Math.random() * 65536).toString(36) + '_');
+var FILENAME = Path.join(Os.tmpdir(), 'performance_' + Math.floor(Math.random() * 65536).toString(36) + '_');
 
 BENCHMARK.max = 0;
 BENCHMARK.index = 0;
@@ -75,14 +76,14 @@ exports.measure = function(name, fn, init, async) {
 
 	var filename = FILENAME + BENCHMARK.queue.length + '.js';
 	Fs.writeFileSync(filename, fn);
-	BENCHMARK.queue.push({ name: name, filename: filename, results: [], memory: [], count: 0, fn: fn });
+	BENCHMARK.queue.push({ name: name, filename: filename, results: [], memory: [], count: 0, fn: fn, index: BENCHMARK.queue.length });
 	return exports;
 };
 
 exports.exec = function(callback) {
 
 	console.log('===========================================================');
-	console.log('> JavaScript Performance Meter v3');
+	console.log('> JavaScript Performance Meter v4');
 	BENCHMARK.name && console.log('> Name: ' + BENCHMARK.name);
 	console.log('===========================================================');
 	console.log('');
@@ -99,6 +100,10 @@ exports.exec = function(callback) {
 		var same = true;
 
 		BENCHMARK.queue.forEach(function(item) {
+
+			if (item.warming)
+				return;
+
 			var time = [];
 			var memory = [];
 
@@ -113,7 +118,12 @@ exports.exec = function(callback) {
 		});
 
 		BENCHMARK.queue.forEach(function(item, index) {
-			item.percentage = (100 - ((item.result / max) * 100)).toFixed(1);
+
+			if (item.warming)
+				return;
+
+			item.percentage = item.result == 0 || max === 0 ? 0 : (100 - ((item.result / max) * 100)).toFixed(1);
+
 			if (!index) {
 				prev = item.percentage;
 				return;
@@ -124,13 +134,21 @@ exports.exec = function(callback) {
 		console.log('');
 
 		var count = 0;
+
+		BENCHMARK.queue.sort(function(a, b) {
+			return a.index > b.index ? 1 : a.index === b.index ? 0 : -1;
+		});
+
 		BENCHMARK.queue.forEach(function(item) {
+
+			if (item.warming)
+				return;
+
 			count = Math.max(count, item.count);
 			console.log('[ ' + padRight(item.name + ' ', 30, '.') + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (' + item.result + ' ms)').replace(/\)$/g, ', memory: ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB)'));
 		});
 
 		console.log('');
-
 
 		console.log('Each test has been executed "' + count.format(0) + '" times.');
 		console.timeEnd('Duration');
@@ -138,28 +156,38 @@ exports.exec = function(callback) {
 		console.log('');
 		BENCHMARK.callback && BENCHMARK.callback(BENCHMARK.queue);
 		BENCHMARK.queue.forEach(function(item) {
-			Fs.unlink(item.filename, NOOP);
+			Fs.unlinkSync(item.filename);
 		});
 	};
 
-	for (var i = 0, length = BENCHMARK.queue.length; i < length; i++)
+	for (var i = 0; i < BENCHMARK.queue.length; i++)
 		BENCHMARK.queue.results = [];
 
 	console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
 	next();
+
 	return exports;
 };
-
-function NOOP() {
-}
 
 function measure(item, next) {
 	Exec('node', [item.filename, BENCHMARK.max], function(err, response) {
 		var res = response.trim().split(',');
 		item.count += +res[3];
 		item.results.push({ time: +res[0], memory: ((+res[1]) + (+res[2])) / 2 });
-		err && console.log(err);
-		next();
+
+		if (err) {
+			console.error('------ ERROR:', '"' + item.name + '"');
+			console.error(err + '');
+			next = null;
+			console.log('------ canceled');
+			BENCHMARK.queue.forEach(function(item) {
+				try {
+					Fs.unlinkSync(item.filename);
+				} catch (e) {}
+			});
+			process.exit(1);
+		} else
+			next();
 	});
 }
 
@@ -179,6 +207,16 @@ function clean(fn) {
 	return fn;
 }
 
+function randomize(arr) {
+	for (var i = arr.length - 1; i > 0; i--) {
+		var j = Math.floor(Math.random() * (i + 1));
+		var temp = arr[i];
+		arr[i] = arr[j];
+		arr[j] = temp;
+	}
+	return arr;
+}
+
 function next() {
 
 	if (BENCHMARK.round >= BENCHMARK.rounds) {
@@ -188,6 +226,7 @@ function next() {
 
 	var item = BENCHMARK.queue[BENCHMARK.index++];
 	if (!item) {
+		randomize(BENCHMARK.queue);
 		BENCHMARK.index = 0;
 		BENCHMARK.round++;
 		console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
