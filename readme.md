@@ -56,6 +56,17 @@ Meter.measure('nextTick', function() {
 Meter.measure('immediate', function() {
 	setImmediate(NEXT);
 });
+
+// NEW: With a custom counter
+Meter.measure('nextTick', function() {
+	COUNT++;
+	process.nextTick(NEXT);
+});
+
+Meter.measure('immediate', function() {
+	COUNT++;
+	setImmediate(NEXT);
+});
 ```
 
 ## Contact

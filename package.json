@@ -15,7 +15,7 @@
     "readmeFilename": "readme.md",
     "repository": {
         "type": "git",
-        "url": "https://github.com/petersirka/performancemeter.git"
+        "url": "https://github.com/totaljs/performancemeter.git"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -24,10 +24,10 @@
         "name": "Peter Širka",
         "email": "petersirka@gmail.com"
     }],
-    "version": "4.0.1",
+    "version": "4.0.2",
     "homepage": "https://www.totaljs.com",
     "bugs": {
-        "url": "https://github.com/petersirka/performancemeter/issues",
+        "url": "https://github.com/totaljs/performancemeter/issues",
         "email": "petersirka@gmail.com"
     }
 }

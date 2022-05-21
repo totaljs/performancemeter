@@ -73,13 +73,13 @@ exports.measure = function(name, fn, init, async) {
 		init += ';';
 
 	if (async || fn.indexOf('NEXT') !== -1)
-		fn = (init || '') + 'function $RUN(){$MCOUNT$++;' + fn.toString() + '}var $MCOUNT$=0,$MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}console.log((Date.now()-$TIME$)+\',\'+$MMIN$+\',\'+$MMAX$+\',\'+$MCOUNT$)}$RUN()';
+		fn = (init || '') + 'function $RUN(){$MCOUNT$++;' + fn.toString() + '}var $MCOUNT$=0,$MMIN$=0,$MMAX$=0,INDEX=0,COUNT=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];function NEXT(){var mem=process.memoryUsage().heapUsed;$MMIN$=Math.min($MMIN$,mem);$MMAX$=Math.max($MMAX$,mem);if(INDEX<$MAX$){INDEX++;$RUN();return}console.log((Date.now()-$TIME$)+\',\'+$MMIN$+\',\'+$MMAX$+\',\'+$MCOUNT$+\',\'+COUNT)}$RUN()';
 	else
-		fn = (init || '') + 'function $RUN(){$MCOUNT$++;' + fn.toString() + '}var $MCOUNT$=0,$MMIN$=0,$MMAX$=0,INDEX=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;console.log(Date.now()-$TIME$+\',\'+mem+\',\'+mem+\',\'+$MCOUNT$)';
+		fn = (init || '') + 'function $RUN(){$MCOUNT$++;' + fn.toString() + '}var $MCOUNT$=0,$MMIN$=0,$MMAX$=0,INDEX=0,COUNT=0;const $TIME$=Date.now(),$MAX$=+process.argv[2];while(INDEX++<$MAX$)$RUN();var mem=process.memoryUsage().heapUsed;console.log(Date.now()-$TIME$+\',\'+mem+\',\'+mem+\',\'+$MCOUNT$+\',\'+COUNT)';
 
 	var filename = FILENAME + BENCHMARK.queue.length + '.js';
 	Fs.writeFileSync(filename, fn);
-	BENCHMARK.queue.push({ name: name, filename: filename, results: [], memory: [], count: 0, fn: fn, index: BENCHMARK.queue.length });
+	BENCHMARK.queue.push({ name: name, filename: filename, results: [], memory: [], count: 0, counter: 0, fn: fn, index: BENCHMARK.queue.length });
 	return exports;
 };
 
@@ -104,23 +104,21 @@ exports.exec = function(callback) {
 		var prev = 0;
 		var same = true;
 
-		BENCHMARK.queue.forEach(function(item) {
+		for (var item of BENCHMARK.queue) {
+			if (!item.warming) {
+				var time = [];
+				var memory = [];
 
-			if (item.warming)
-				return;
+				for (var m of item.results) {
+					time.push(m.time);
+					memory.push(m.memory);
+				}
 
-			var time = [];
-			var memory = [];
-
-			item.results.forEach(function(r) {
-				time.push(r.time);
-				memory.push(r.memory);
-			});
-
-			item.result = Math.round(median(time));
-			item.memory = Math.round(median(memory));
-			max = Math.max(max, item.result);
-		});
+				item.result = Math.round(median(time));
+				item.memory = Math.round(median(memory));
+				max = Math.max(max, item.result);
+			}
+		}
 
 		BENCHMARK.queue.forEach(function(item, index) {
 
@@ -153,30 +151,32 @@ exports.exec = function(callback) {
 		if (BENCHMARK.multiple)
 			console.log('------', Path.basename(process.argv[1]));
 
-		BENCHMARK.queue.forEach(function(item) {
+		var counter = 0;
 
-			if (item.warming)
-				return;
-
-			count = Math.max(count, item.count);
-			console.log('[ ' + padRight(item.name + ' ', 40, '.') + ' ' + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (avg. ' + item.result + ' ms)').replace(/\)$/g, ', ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB) ]'));
-		});
+		for (var item of BENCHMARK.queue) {
+			if (!item.warming) {
+				count = Math.max(count, item.count);
+				counter += item.counter;
+				console.log('[ ' + padRight(item.name + ' ', 40, '.') + ' ' + ((same ? 'same performance' : item.percentage === '0.0' ? 'slowest' : ('+' + item.percentage + '% fastest')) + ' (avg. ' + item.result + ' ms)').replace(/\)$/g, ', ' + (item.memory / 1024 / 1024).toFixed(2) + ' MB) ]'));
+			}
+		}
 
 		if (!BENCHMARK.multiple) {
 			console.log('');
 			console.log('Each test has been executed "' + count.format(0) + '" times.');
+			counter && console.log('Counter "' + counter.format(0) + '"');
 			console.timeEnd('Duration');
 			console.log('');
 		}
 
 		BENCHMARK.callback && BENCHMARK.callback(BENCHMARK.queue);
-		BENCHMARK.queue.forEach(function(item) {
+
+		for (var item of BENCHMARK.queue)
 			Fs.unlinkSync(item.filename);
-		});
 	};
 
-	for (var i = 0; i < BENCHMARK.queue.length; i++)
-		BENCHMARK.queue.results = [];
+	for (var item of BENCHMARK.queue)
+		item.results = [];
 
 	if (!BENCHMARK.multiple)
 		console.log('------ round (' + BENCHMARK.round + '/' + BENCHMARK.rounds + ')');
@@ -187,21 +187,23 @@ exports.exec = function(callback) {
 };
 
 function measure(item, next) {
-	Exec('node', [item.filename, BENCHMARK.max], function(err, response) {
+	Exec('node', [item.filename, BENCHMARK.max - 1], function(err, response) {
+
 		var res = response.trim().split(',');
+		item.counter += +res[4];
 		item.count += +res[3];
-		item.results.push({ time: +res[0], memory: ((+res[1]) + (+res[2])) / 2 });
+		item.results.push({ time: +res[0], memory: ((+res[1]) + (+res[2])) / 2, counter: item.counter });
 
 		if (err) {
 			console.error('------ ERROR:', '"' + item.name + '"');
 			console.error(err + '');
 			next = null;
 			console.log('------ canceled');
-			BENCHMARK.queue.forEach(function(item) {
+			for (var tmp of BENCHMARK.queue) {
 				try {
-					Fs.unlinkSync(item.filename);
+					Fs.unlinkSync(tmp.filename);
 				} catch (e) {}
-			});
+			}
 			process.exit(1);
 		} else
 			next();
